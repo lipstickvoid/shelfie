@@ -1,0 +1,1289 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111116">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>shelfie — твоя медиатека</title>
+<script>
+try{
+  var raw = localStorage.getItem('shelfie-v2') || localStorage.getItem('shelfie-v1');
+  var t = raw ? JSON.parse(raw).settings?.theme : null;
+  if (t) document.documentElement.dataset.theme = t;
+}catch(e){}
+</script>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#111116; --panel:#1b1b23; --panel2:#24242e; --line:#343440;
+  --text:#f4f1fa; --muted:#a6a2b3; --accent:#c8b4ff; --accentText:#20172f;
+  --gold:#f4c96b; --danger:#ff9eaa; --ok:#8de0a8;
+  --shadow:0 10px 34px #0006;
+}
+html[data-theme="light"]{
+  color-scheme:light;
+  --bg:#f4f2f9; --panel:#ffffff; --panel2:#ece8f6; --line:#ded8ee;
+  --text:#1d1930; --muted:#6c6584; --accent:#7a5cff; --accentText:#ffffff;
+  --gold:#d99b1f; --danger:#d2415a; --ok:#1f8a4c;
+  --shadow:0 10px 34px #0000001a;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:radial-gradient(ellipse at top,var(--panel2) 0,var(--bg) 46%);
+  color:var(--text);font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  min-height:100vh;-webkit-tap-highlight-color:transparent;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.app{max-width:920px;margin:auto;padding:22px 16px 110px}
+
+/* ── верхняя панель ── */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px}
+.brand{font-size:30px;font-weight:800;letter-spacing:-1.5px}
+.brand span{color:var(--accent)}
+.eyebrow{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+.topactions{display:flex;gap:8px}
+
+/* ── кнопки и поля ── */
+.iconbtn,.btn{
+  border:1px solid var(--line);background:var(--panel);color:var(--text);
+  border-radius:14px;padding:10px 13px;transition:transform .08s,border-color .15s,background .15s;
+}
+.btn:active{transform:scale(.97)}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accentText);font-weight:750}
+.btn.small{padding:7px 10px;font-size:13px;border-radius:11px}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.field{
+  width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+  padding:12px;color:var(--text);outline:none;transition:border-color .15s;
+}
+.field:focus{border-color:var(--accent)}
+.field::placeholder{color:var(--muted);opacity:.75}
+select.field{cursor:pointer}
+textarea.field{resize:vertical;min-height:80px}
+.filelabel{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+
+/* ── библиотека ── */
+.hero{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:20px}
+.hero h1{font-size:26px;line-height:1.1;letter-spacing:-.8px;margin:5px 0 7px}
+.muted{color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0 24px}
+.stat{padding:14px;border:1px solid var(--line);background:var(--panel);border-radius:17px;min-width:0}
+.stat b{display:block;font-size:23px;letter-spacing:-.5px}
+.stat span{color:var(--muted);font-size:12px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.search{flex:1;min-width:150px}
+.toolbar select{flex:1;max-width:48%}
+.viewtoggle{display:flex;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+.viewtoggle button{border:0;background:transparent;padding:10px 12px;color:var(--muted)}
+.viewtoggle button.on{background:var(--panel2);color:var(--accent)}
+
+/* ── карточки ── */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.card{
+  overflow:hidden;background:var(--panel);border:1px solid var(--line);
+  border-radius:18px;min-width:0;display:flex;flex-direction:column;
+  transition:border-color .15s,transform .12s;
+}
+.card:hover{border-color:var(--accent)}
+.cover{
+  aspect-ratio:4/3;background:linear-gradient(135deg,var(--panel2),var(--panel));
+  display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;flex:none;
+}
+.cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cover .placeholder{font-size:40px;color:var(--accent);opacity:.65}
+.typepill{
+  position:absolute;top:9px;left:9px;background:#111116d9;color:#f2edf9;
+  border:1px solid #ffffff22;border-radius:999px;padding:4px 9px;font-size:10px;
+}
+html[data-theme="light"] .typepill{background:#ffffffdd;color:#2a2340;border-color:#00000018}
+.cardbody{padding:12px;display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.card h3{font-size:15px;margin:0;line-height:1.3;overflow-wrap:anywhere}
+.sub{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.ratingline{display:flex;align-items:baseline;gap:6px;font-size:13px}
+.ratingline .stars{color:var(--gold);letter-spacing:1px;font-size:15px}
+.ratingline .num{color:var(--muted);font-size:12px}
+.status{
+  display:inline-block;color:var(--accent);background:var(--panel2);
+  border:1px solid var(--line);border-radius:7px;padding:3px 7px;font-size:10px;
+  margin-top:4px;align-self:flex-start;
+}
+.progressbar{height:5px;background:var(--panel2);border-radius:99px;overflow:hidden;margin-top:8px}
+.progressbar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.progresslabel{font-size:11px;color:var(--muted);margin-top:4px}
+.cardactions{display:flex;gap:7px;margin-top:auto;padding-top:11px}
+.cardactions button{flex:1}
+
+/* список */
+.grid.list{grid-template-columns:1fr;gap:9px}
+.grid.list .card{flex-direction:row;border-radius:16px}
+.grid.list .cover{width:96px;aspect-ratio:1;border-radius:0}
+.grid.list .cover .placeholder{font-size:28px}
+.grid.list .typepill{display:none}
+.grid.list .cardbody{padding:11px 13px}
+
+/* ── пустое состояние ── */
+.empty{
+  grid-column:1/-1;text-align:center;padding:44px 20px;
+  border:1px dashed var(--line);border-radius:18px;color:var(--muted);
+}
+.empty strong{display:block;color:var(--text);font-size:17px;margin-bottom:6px}
+
+/* ── секции ── */
+.section{display:none}
+.section.active{display:block;animation:fade .18s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.sectiontitle{font-size:19px;margin:4px 0 14px}
+.panel{border:1px solid var(--line);background:var(--panel);border-radius:18px;padding:16px;margin-bottom:14px}
+.panel h3{margin:0 0 6px;font-size:15px}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.formrow{display:flex;flex-direction:column;gap:6px;min-width:0}
+.formrow.full{grid-column:1/-1}
+.formrow label{font-size:12px;color:var(--muted)}
+.formactions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.notice{font-size:12px;color:var(--muted);line-height:1.55;margin:10px 0 0}
+
+/* ── оценка ── */
+.ratingbox{display:flex;flex-direction:column;gap:6px}
+.stardisplay{display:flex;gap:3px;font-size:34px;line-height:1;user-select:none}
+.star{position:relative;color:var(--line);display:inline-block}
+.star .fill{position:absolute;inset:0;overflow:hidden;color:var(--gold);white-space:nowrap}
+.ratingvalue{font-size:13px;color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--accent);margin:4px 0}
+
+/* ── обложка ── */
+.coverEditor{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:start}
+.coverPreview{
+  aspect-ratio:1;border:1px dashed var(--line);border-radius:14px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  background:var(--panel2);font-size:11px;text-align:center;padding:6px;
+}
+.coverPreview img{width:100%;height:100%;object-fit:cover}
+.coverControls{display:flex;flex-direction:column;gap:8px;min-width:0}
+.coverControls .row{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── статистика ── */
+.barrow{display:grid;grid-template-columns:1fr 90px 32px;gap:10px;align-items:center;padding:5px 0}
+.barlabel{font-size:13px;overflow-wrap:anywhere}
+.bartrack{height:8px;background:var(--panel2);border-radius:99px;overflow:hidden}
+.barfill{height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.barvalue{text-align:right;font-size:13px;font-weight:700}
+
+/* ── категории ── */
+.customcat{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.customcat:last-child{border-bottom:0}
+
+/* ── нижняя навигация ── */
+.bottomnav{
+  position:fixed;bottom:0;left:0;right:0;background:color-mix(in srgb,var(--panel) 92%,transparent);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-top:1px solid var(--line);display:flex;justify-content:center;z-index:5;
+  padding:8px 8px calc(8px + env(safe-area-inset-bottom));
+}
+.navinner{display:flex;width:100%;max-width:560px;gap:5px}
+.navbtn{flex:1;background:transparent;border:0;color:var(--muted);border-radius:12px;padding:8px 4px;font-size:11px}
+.navbtn span{display:block;font-size:19px;margin-bottom:2px}
+.navbtn.active{background:var(--panel2);color:var(--accent)}
+
+/* ── тост ── */
+.toast{
+  position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(8px);
+  background:var(--accent);color:var(--accentText);border-radius:12px;padding:10px 16px;
+  font-weight:650;z-index:20;box-shadow:var(--shadow);max-width:90%;text-align:center;
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── модалка ── */
+.overlay{
+  position:fixed;inset:0;background:#00000080;z-index:30;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  animation:fade .15s ease;
+}
+.modal{
+  background:var(--panel);border:1px solid var(--line);border-radius:20px;
+  padding:20px;max-width:420px;width:100%;box-shadow:var(--shadow);
+}
+.modalText{font-size:15px;line-height:1.5;margin-bottom:16px;white-space:pre-line}
+.modalActions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.modalActions .btn{flex:1;min-width:100px}
+
+@media(min-width:650px){
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grid.list{grid-template-columns:1fr}
+  .cover{aspect-ratio:5/4}
+  .grid.list .cover{aspect-ratio:1}
+  .app{padding-top:30px}
+}
+@media(max-width:370px){
+  .stats{gap:6px}
+  .stat{padding:10px}
+  .stat b{font-size:20px}
+  .hero h1{font-size:23px}
+  .formgrid{grid-template-columns:1fr}
+  .formrow.full{grid-column:auto}
+  .coverEditor{grid-template-columns:1fr}
+  .coverPreview{aspect-ratio:16/9}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <div class="eyebrow">personal media archive</div>
+      <div class="brand">shelf<span>ie.</span></div>
+    </div>
+    <div class="topactions">
+      <button class="iconbtn" id="themeBtn" aria-label="Сменить тему">◐</button>
+      <button class="iconbtn" id="quickBackup" aria-label="Резервная копия">↗</button>
+    </div>
+  </header>
+
+  <!-- ═══ БИБЛИОТЕКА ═══ -->
+  <section id="library" class="section active">
+    <div class="hero">
+      <div>
+        <div class="eyebrow">твоя коллекция</div>
+        <h1>всё, что оставило след.</h1>
+        <div class="muted" id="itemCount">пока здесь тихо</div>
+      </div>
+      <button class="btn primary" id="newItem">＋ добавить</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b id="statTotal">0</b><span>в коллекции</span></div>
+      <div class="stat"><b id="statDone">0</b><span>завершено</span></div>
+      <div class="stat"><b id="statAvg">—</b><span>средняя оценка</span></div>
+    </div>
+
+    <div class="toolbar">
+      <input id="search" class="field search" placeholder="поиск…  (Ctrl+K)">
+      <select id="filterCat" class="field"><option value="">все категории</option></select>
+      <select id="filterStatus" class="field">
+        <option value="">все статусы</option>
+        <option>в планах</option><option>сейчас</option><option>завершено</option>
+        <option>отложено</option><option>брошено</option>
+      </select>
+      <select id="sort" class="field">
+        <option value="updated">недавно изменённые</option>
+        <option value="title">по названию</option>
+        <option value="rating">по оценке</option>
+        <option value="start">по дате начала</option>
+        <option value="finish">по дате завершения</option>
+      </select>
+      <div class="viewtoggle">
+        <button id="viewGrid" class="on" title="Сетка">▦</button>
+        <button id="viewList" title="Список">☰</button>
+      </div>
+    </div>
+
+    <div class="grid" id="cards"></div>
+  </section>
+
+  <!-- ═══ РЕДАКТОР ═══ -->
+  <section id="editor" class="section">
+    <h2 class="sectiontitle" id="editorTitle">новая запись</h2>
+    <form id="itemForm" class="panel" novalidate>
+      <input type="hidden" id="itemId">
+      <div class="formgrid">
+        <div class="formrow full">
+          <label for="title">название *</label>
+          <input id="title" class="field" required maxlength="180" placeholder="название произведения">
+        </div>
+
+        <div class="formrow">
+          <label for="category">категория</label>
+          <select id="category" class="field"></select>
+        </div>
+        <div class="formrow">
+          <label for="status">статус</label>
+          <select id="status" class="field">
+            <option>в планах</option><option>сейчас</option><option>завершено</option>
+            <option>отложено</option><option>брошено</option>
+          </select>
+        </div>
+
+        <div class="formrow full">
+          <label>оценка</label>
+          <div class="ratingbox">
+            <div class="stardisplay" id="starDisplay"></div>
+            <input type="range" id="ratingSlider" min="0" max="5" step="0.25" value="0">
+            <div class="ratingvalue" id="ratingValue">без оценки</div>
+          </div>
+        </div>
+
+        <div class="formrow full">
+          <label>обложка</label>
+          <div class="coverEditor">
+            <div class="coverPreview" id="coverPreview"><span class="muted">нет обложки</span></div>
+            <div class="coverControls">
+              <div class="row">
+                <label class="btn small filelabel">📁 загрузить с устройства
+                  <input id="coverFile" type="file" accept="image/*" class="hidden">
+                </label>
+                <button class="btn small" type="button" id="coverClear">убрать</button>
+              </div>
+              <input id="coverUrl" class="field" type="url" placeholder="…или вставь ссылку https://">
+              <div class="notice" style="margin:0">Файлы сжимаются до 700 px и хранятся прямо в браузере.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="formrow">
+          <label for="creator">автор / создатель</label>
+          <input id="creator" class="field" maxlength="120" placeholder="необязательно">
+        </div>
+        <div class="formrow">
+          <label for="tags">теги (через запятую)</label>
+          <input id="tags" class="field" maxlength="250" placeholder="фаворит, пересмотреть">
+        </div>
+
+        <div class="formrow">
+          <label for="progressNow">прогресс — пройдено</label>
+          <input id="progressNow" class="field" type="number" min="0" step="1" placeholder="напр. 5">
+        </div>
+        <div class="formrow">
+          <label for="progressTotal">прогресс — всего</label>
+          <input id="progressTotal" class="field" type="number" min="0" step="1" placeholder="напр. 12">
+        </div>
+
+        <div class="formrow">
+          <label for="startDate">дата начала</label>
+          <input id="startDate" class="field" type="date">
+        </div>
+        <div class="formrow">
+          <label for="finishDate">дата завершения</label>
+          <input id="finishDate" class="field" type="date">
+        </div>
+
+        <div class="formrow full">
+          <label for="notes">заметки</label>
+          <textarea id="notes" class="field" maxlength="5000" placeholder="что хочется запомнить…"></textarea>
+        </div>
+      </div>
+
+      <div class="formactions">
+        <button class="btn primary" type="submit">сохранить запись</button>
+        <button class="btn" type="button" id="cancelEdit">отмена</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ═══ СТАТИСТИКА ═══ -->
+  <section id="statistics" class="section">
+    <h2 class="sectiontitle">твоя статистика</h2>
+    <div class="stats">
+      <div class="stat"><b id="sTotal">0</b><span>всего записей</span></div>
+      <div class="stat"><b id="sRated">0</b><span>с оценкой</span></div>
+      <div class="stat"><b id="sAvg">—</b><span>средняя оценка</span></div>
+    </div>
+    <div class="panel"><h3>по статусам</h3><div id="statusStats" class="muted">пока нет записей</div></div>
+    <div class="panel"><h3>по категориям</h3><div id="categoryStats" class="muted">пока нет записей</div></div>
+    <div class="panel"><h3>по месяцам завершения</h3><div id="dateStats" class="muted">добавляй даты завершения, чтобы видеть историю</div></div>
+  </section>
+
+  <!-- ═══ НАСТРОЙКИ ═══ -->
+  <section id="settings" class="section">
+    <h2 class="sectiontitle">настройки и данные</h2>
+
+    <div class="panel">
+      <h3>категории</h3>
+      <p class="notice">Свои категории можно добавлять. Удалить можно только пустую категорию — чтобы случайно не потерять записи.</p>
+      <div class="toolbar" style="margin-top:12px">
+        <input id="newCategory" class="field search" placeholder="например, фанфик">
+        <button class="btn primary" id="addCategory" type="button">добавить</button>
+      </div>
+      <div id="categoryList"></div>
+    </div>
+
+    <div class="panel">
+      <h3>резервная копия</h3>
+      <p class="notice">Экспорт в JSON — единственный надёжный способ не потерять библиотеку. Делайте копию раз в неделю и храните файл в облаке.</p>
+      <div class="formactions">
+        <button class="btn primary" id="exportBtn" type="button">экспортировать JSON</button>
+        <label class="btn filelabel">импортировать JSON
+          <input id="importFile" type="file" accept="application/json,.json" class="hidden">
+        </label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>хранение</h3>
+      <p class="notice">Записи лежат в памяти этого браузера на этом устройстве. Синхронизации с облаком нет — на другом устройстве библиотека будет пустой.</p>
+      <div id="storageInfo" class="notice" style="margin-top:12px"></div>
+      <div class="progressbar" style="margin-top:8px"><i id="storageBar" style="width:0%"></i></div>
+      <div class="formactions">
+        <button class="btn" id="demoBtn" type="button">добавить демо-запись</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>опасная зона</h3>
+      <p class="notice">Полностью очищает библиотеку в этом браузере. Отменить будет нельзя — сначала сделайте экспорт.</p>
+      <div class="formactions">
+        <button class="btn danger" id="wipeBtn" type="button">удалить все данные</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<nav class="bottomnav">
+  <div class="navinner">
+    <button class="navbtn active" data-page="library"><span>▦</span>библиотека</button>
+    <button class="navbtn" data-page="statistics"><span>◷</span>статистика</button>
+    <button class="navbtn" data-page="settings"><span>⚙</span>настройки</button>
+  </div>
+</nav>
+
+<div id="toast" class="toast"></div>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════
+   1. КОНСТАНТЫ И СОСТОЯНИЕ
+   ═══════════════════════════════════════════ */
+const KEY = 'shelfie-v2';
+const OLD_KEY = 'shelfie-v1';
+const STORAGE_LIMIT = 5 * 1024 * 1024; // ~5 МБ — типичный лимит localStorage
+
+const DEFAULT_CATS = ['книга','фанфик','манга','манхва','комикс','фильм',
+                      'сериал','аниме','игра','подкаст','музыка','другое'];
+
+const CAT_ICON = {
+  'книга':'▤','фанфик':'✎','манга':'▥','манхва':'▥','комикс':'▧','фильм':'▹',
+  'сериал':'▤','аниме':'✧','игра':'◇','подкаст':'♫','музыка':'♫','другое':'✦'
+};
+
+let db = {
+  items: [],
+  categories: [...DEFAULT_CATS],
+  settings: { theme: 'dark', view: 'grid' }
+};
+
+let currentCover = '';      // обложка в открытой форме (ссылка или data URL)
+let toastTimer = null;
+const $ = id => document.getElementById(id);
+
+/* ═══════════════════════════════════════════
+   2. УТИЛИТЫ
+   ═══════════════════════════════════════════ */
+const esc = (s = '') => String(s).replace(/[&<>"']/g, c => (
+  {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+));
+
+const uid = () => (crypto.randomUUID
+  ? crypto.randomUUID()
+  : 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+
+function fmt(n){
+  return Number(n).toLocaleString('ru-RU',{minimumFractionDigits:2, maximumFractionDigits:2})
+    .replace(/,00$/, '').replace(/(,\d)0$/, '$1');
+}
+
+function plural(n, one, few, many){
+  n = Math.abs(n) % 100;
+  const n1 = n % 10;
+  if (n > 10 && n < 20) return many;
+  if (n1 > 1 && n1 < 5) return few;
+  if (n1 === 1) return one;
+  return many;
+}
+
+function showToast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function bytesHuman(b){
+  if (b < 1024) return b + ' Б';
+  if (b < 1024*1024) return (b/1024).toFixed(1) + ' КБ';
+  return (b/1024/1024).toFixed(2) + ' МБ';
+}
+
+/* модальное окно вместо системного confirm */
+function ask(text, buttons){
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    ov.innerHTML =
+      '<div class="modal" role="dialog" aria-modal="true">' +
+        '<div class="modalText">' + esc(text) + '</div>' +
+        '<div class="modalActions">' +
+          buttons.map((b, i) =>
+            '<button class="btn ' + (b.style || '') + '" data-i="' + i + '">' +
+              esc(b.label) + '</button>').join('') +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(ov);
+
+    let done = false;
+    const close = v => { if (done) return; done = true; ov.remove(); resolve(v); };
+
+    ov.querySelectorAll('[data-i]').forEach(b => {
+      b.onclick = () => close(buttons[+b.dataset.i].value);
+    });
+    ov.addEventListener('click', e => { if (e.target === ov) close(null); });
+    ov.addEventListener('keydown', e => { if (e.key === 'Escape') close(null); });
+    const first = ov.querySelector('button');
+    if (first) first.focus();
+  });
+}
+
+/* ═══════════════════════════════════════════
+   3. ХРАНЕНИЕ
+   ═══════════════════════════════════════════ */
+function load(){
+  try {
+    let raw = localStorage.getItem(KEY);
+
+    // миграция со старой версии
+    if (!raw){
+      const old = localStorage.getItem(OLD_KEY);
+      if (old){
+        const parsed = JSON.parse(old);
+        if (Array.isArray(parsed.items) && Array.isArray(parsed.categories)){
+          db.items = parsed.items;
+          db.categories = parsed.categories;
+          save(false);
+          showToast('данные перенесены из старой версии');
+        }
+      }
+      return;
+    }
+
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed.items)) db.items = parsed.items;
+    if (Array.isArray(parsed.categories) && parsed.categories.length) db.categories = parsed.categories;
+    if (parsed.settings) Object.assign(db.settings, parsed.settings);
+  } catch(e){
+    showToast('не удалось прочитать сохранённые данные');
+  }
+}
+
+function save(rerender = true){
+  try {
+    localStorage.setItem(KEY, JSON.stringify(db));
+  } catch(e){
+    showToast('память переполнена — удали пару обложек или сделай экспорт');
+    return;
+  }
+  if (rerender) render();
+}
+
+function commit(){ save(true); }
+
+function storageBytes(){
+  try {
+    const raw = localStorage.getItem(KEY) || '';
+    return new Blob([raw]).size;
+  } catch(e){ return 0; }
+}
+
+/* ═══════════════════════════════════════════
+   4. ОБЛОЖКИ — СЖАТИЕ ИЗОБРАЖЕНИЙ
+   ═══════════════════════════════════════════ */
+function compressImage(file, maxSide = 700, quality = 0.78){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.naturalWidth, h = img.naturalHeight;
+        const scale = Math.min(1, maxSide / Math.max(w, h));
+        w = Math.max(1, Math.round(w * scale));
+        h = Math.max(1, Math.round(h * scale));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => reject(new Error('не удалось прочитать изображение'));
+      img.src = reader.result;
+    };
+    reader.onerror = () => reject(new Error('не удалось прочитать файл'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function setCover(value){
+  currentCover = value || '';
+  $('coverUrl').value = /^https?:/i.test(currentCover) ? currentCover : '';
+  renderCoverPreview();
+}
+
+function renderCoverPreview(){
+  const box = $('coverPreview');
+  if (!currentCover){
+    box.innerHTML = '<span class="muted">нет обложки</span>';
+    return;
+  }
+  box.innerHTML = '<img src="' + esc(currentCover) + '" alt="">';
+}
+
+/* ═══════════════════════════════════════════
+   5. ЗВЁЗДЫ
+   ═══════════════════════════════════════════ */
+function renderStars(value){
+  let html = '';
+  for (let i = 1; i <= 5; i++){
+    const fill = Math.max(0, Math.min(1, value - (i - 1)));
+    html += '<span class="star">★<span class="fill" style="width:' +
+            (fill * 100).toFixed(1) + '%">★</span></span>';
+  }
+  $('starDisplay').innerHTML = html;
+  $('ratingValue').textContent = value
+    ? fmt(value) + ' из 5'
+    : 'без оценки';
+}
+
+function starsText(v){
+  if (!v) return '☆☆☆☆☆';
+  let s = '';
+  for (let i = 1; i <= 5; i++){
+    const f = Math.max(0, Math.min(1, v - (i - 1)));
+    s += f >= 0.75 ? '★' : f >= 0.25 ? '⯨' : '☆';
+  }
+  return s;
+}
+
+/* ═══════════════════════════════════════════
+   6. РЕНДЕР БИБЛИОТЕКИ
+   ═══════════════════════════════════════════ */
+function render(){
+  const q      = $('search').value.toLowerCase().trim();
+  const cat    = $('filterCat').value;
+  const status = $('filterStatus').value;
+  const sort   = $('sort').value;
+
+  let arr = db.items.filter(i => {
+    if (q){
+      const hay = [i.title, i.creator, i.notes, (i.tags || []).join(' ')]
+        .join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (cat && i.category !== cat) return false;
+    if (status && i.status !== status) return false;
+    return true;
+  });
+
+  arr.sort((a, b) => {
+    switch (sort){
+      case 'title':  return (a.title || '').localeCompare(b.title || '', 'ru');
+      case 'rating': return (b.rating || 0) - (a.rating || 0);
+      case 'start':  return (b.startDate || '').localeCompare(a.startDate || '');
+      case 'finish': return (b.finishDate || '').localeCompare(a.finishDate || '');
+      default:       return (b.updated || '').localeCompare(a.updated || '');
+    }
+  });
+
+  const grid = $('cards');
+  grid.className = 'grid' + (db.settings.view === 'list' ? ' list' : '');
+
+  if (!arr.length){
+    grid.innerHTML =
+      '<div class="empty"><strong>пока здесь пусто</strong>' +
+      'добавь первую запись — хоть фильм, хоть фанфик, хоть что-то ' +
+      'совершенно непонятное окружающим.</div>';
+  } else {
+    grid.innerHTML = arr.map(cardHTML).join('');
+  }
+
+  // обработчики
+  grid.querySelectorAll('[data-edit]').forEach(b => {
+    b.onclick = () => editItem(b.dataset.edit);
+  });
+  grid.querySelectorAll('[data-delete]').forEach(b => {
+    b.onclick = () => removeItem(b.dataset.delete);
+  });
+  // показать заглушку, если картинка не загрузилась
+  grid.querySelectorAll('.cover img').forEach(img => {
+    img.onerror = () => {
+      img.style.display = 'none';
+      const ph = img.parentElement.querySelector('.placeholder');
+      if (ph) ph.style.display = 'flex';
+    };
+  });
+
+  // счётчики
+  const rated = db.items.filter(i => i.rating > 0);
+  const avg = rated.length
+    ? fmt(rated.reduce((s, i) => s + i.rating, 0) / rated.length)
+    : '—';
+
+  $('itemCount').textContent = db.items.length
+    ? db.items.length + ' ' + plural(db.items.length, 'запись', 'записи', 'записей')
+    : 'пока здесь тихо';
+  $('statTotal').textContent = db.items.length;
+  $('statDone').textContent  = db.items.filter(i => i.status === 'завершено').length;
+  $('statAvg').textContent   = avg;
+
+  $('sTotal').textContent = db.items.length;
+  $('sRated').textContent = rated.length;
+  $('sAvg').textContent   = avg;
+
+  renderStats();
+  renderCategoryList();
+  renderStorageInfo();
+}
+
+function cardHTML(i){
+  const icon = CAT_ICON[i.category] || '✦';
+  const hasCover = !!i.coverUrl;
+
+  const cover =
+    '<div class="cover">' +
+      (hasCover
+        ? '<img src="' + esc(i.coverUrl) + '" alt="" loading="lazy">'
+        : '') +
+      '<span class="placeholder"' + (hasCover ? ' style="display:none"' : '') +
+        '>' + icon + '</span>' +
+      '<span class="typepill">' + esc(i.category) + '</span>' +
+    '</div>';
+
+  const rating =
+    '<div class="ratingline">' +
+      '<span class="stars">' + starsText(i.rating) + '</span>' +
+      '<span class="num">' + (i.rating ? fmt(i.rating) + '/5' : 'нет оценки') + '</span>' +
+    '</div>';
+
+  let progress = '';
+  if (i.progressTotal > 0){
+    const done = Math.min(i.progressNow || 0, i.progressTotal);
+    const pct  = Math.round(done / i.progressTotal * 100);
+    progress =
+      '<div class="progressbar"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="progresslabel">' + done + ' из ' + i.progressTotal + ' · ' + pct + '%</div>';
+  } else if (i.progressNow > 0){
+    progress = '<div class="progresslabel">пройдено: ' + i.progressNow + '</div>';
+  }
+
+  return (
+    '<article class="card">' +
+      cover +
+      '<div class="cardbody">' +
+        '<h3>' + esc(i.title) + '</h3>' +
+        '<div class="sub">' + esc(i.creator || 'автор не указан') + '</div>' +
+        rating +
+        '<div class="status">' + esc(i.status) + '</div>' +
+        progress +
+        '<div class="cardactions">' +
+          '<button class="btn small" data-edit="' + esc(i.id) + '">изменить</button>' +
+          '<button class="btn small" data-delete="' + esc(i.id) + '">удалить</button>' +
+        '</div>' +
+      '</div>' +
+    '</article>'
+  );
+}
+
+/* ═══════════════════════════════════════════
+   7. СТАТИСТИКА
+   ═══════════════════════════════════════════ */
+function bars(entries, total){
+  if (!entries.length) return '<div class="muted">пока нет записей</div>';
+  return entries.map(([k, v]) =>
+    '<div class="barrow">' +
+      '<div class="barlabel">' + esc(k) + '</div>' +
+      '<div class="bartrack"><div class="barfill" style="width:' +
+        (total ? (v / total * 100).toFixed(1) : 0) + '%"></div></div>' +
+      '<div class="barvalue">' + v + '</div>' +
+    '</div>'
+  ).join('');
+}
+
+function renderStats(){
+  const total = db.items.length;
+
+  const countBy = key => {
+    const m = {};
+    db.items.forEach(i => {
+      const k = i[key] || 'не указано';
+      m[k] = (m[k] || 0) + 1;
+    });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  };
+
+  $('statusStats').innerHTML   = bars(countBy('status'), total);
+  $('categoryStats').innerHTML = bars(countBy('category'), total);
+
+  const dates = {};
+  db.items.filter(i => i.finishDate).forEach(i => {
+    const m = i.finishDate.slice(0, 7);
+    dates[m] = (dates[m] || 0) + 1;
+  });
+  const dateEntries = Object.entries(dates).sort((a, b) => b[0].localeCompare(a[0]));
+  const dateTotal = dateEntries.reduce((s, e) => s + e[1], 0);
+  $('dateStats').innerHTML = dateEntries.length
+    ? bars(dateEntries, dateTotal)
+    : '<div class="muted">добавляй даты завершения, чтобы видеть историю</div>';
+}
+
+/* ═══════════════════════════════════════════
+   8. КАТЕГОРИИ
+   ═══════════════════════════════════════════ */
+function refreshCategories(){
+  const keepForm   = $('category').value;
+  const keepFilter = $('filterCat').value;
+
+  const opts = db.categories.map(c => '<option>' + esc(c) + '</option>').join('');
+  $('category').innerHTML = opts;
+  $('filterCat').innerHTML = '<option value="">все категории</option>' + opts;
+
+  if (db.categories.includes(keepForm))   $('category').value   = keepForm;
+  if (db.categories.includes(keepFilter)) $('filterCat').value  = keepFilter;
+
+  renderCategoryList();
+}
+
+function renderCategoryList(){
+  $('categoryList').innerHTML = db.categories.map(c => {
+    const count = db.items.filter(i => i.category === c).length;
+    const isDefault = DEFAULT_CATS.includes(c);
+    return '<div class="customcat">' +
+      '<span>' + esc(c) + ' <span class="muted">(' + count + ')</span></span>' +
+      (isDefault
+        ? '<span class="muted" style="font-size:12px">стандартная</span>'
+        : '<button class="btn small" data-delcat="' + esc(c) + '">удалить</button>') +
+    '</div>';
+  }).join('');
+
+  $('categoryList').querySelectorAll('[data-delcat]').forEach(b => {
+    b.onclick = () => {
+      const c = b.dataset.delcat;
+      if (db.items.some(i => i.category === c)){
+        showToast('сначала перенеси записи в другую категорию');
+        return;
+      }
+      db.categories = db.categories.filter(x => x !== c);
+      commit();
+      refreshCategories();
+    };
+  });
+}
+
+/* ═══════════════════════════════════════════
+   9. ИНФО О ПАМЯТИ
+   ═══════════════════════════════════════════ */
+function renderStorageInfo(){
+  const used = storageBytes();
+  const pct  = Math.min(100, used / STORAGE_LIMIT * 100);
+  const bar  = $('storageBar');
+  if (bar){
+    bar.style.width = pct.toFixed(1) + '%';
+    bar.style.background = pct > 80 ? 'var(--danger)' : 'var(--accent)';
+  }
+  const info = $('storageInfo');
+  if (info){
+    info.textContent = 'Занято ' + bytesHuman(used) + ' из примерно ' +
+      bytesHuman(STORAGE_LIMIT) + ' (' + pct.toFixed(0) + '%). Записей: ' + db.items.length + '.';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   10. НАВИГАЦИЯ
+   ═══════════════════════════════════════════ */
+function nav(page){
+  document.querySelectorAll('.section').forEach(s =>
+    s.classList.toggle('active', s.id === page));
+  document.querySelectorAll('.navbtn').forEach(b =>
+    b.classList.toggle('active', b.dataset.page === page));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (page === 'library' || page === 'statistics') render();
+}
+
+/* ═══════════════════════════════════════════
+   11. ФОРМА
+   ═══════════════════════════════════════════ */
+function clearForm(){
+  $('itemForm').reset();
+  $('itemId').value = '';
+  $('editorTitle').textContent = 'новая запись';
+  $('status').value = 'в планах';
+  $('ratingSlider').value = 0;
+  renderStars(0);
+  setCover('');
+}
+
+function editItem(id){
+  const i = db.items.find(x => x.id === id);
+  if (!i) return;
+
+  refreshCategories();
+  nav('editor');
+  $('editorTitle').textContent = 'редактировать запись';
+  $('itemId').value      = i.id;
+  $('title').value       = i.title || '';
+  $('category').value    = i.category || 'другое';
+  $('status').value      = i.status || 'в планах';
+  $('creator').value     = i.creator || '';
+  $('startDate').value   = i.startDate || '';
+  $('finishDate').value  = i.finishDate || '';
+  $('progressNow').value = i.progressNow || '';
+  $('progressTotal').value = i.progressTotal || '';
+  $('tags').value        = (i.tags || []).join(', ');
+  $('notes').value       = i.notes || '';
+
+  $('ratingSlider').value = i.rating || 0;
+  renderStars(i.rating || 0);
+  setCover(i.coverUrl || '');
+
+  $('title').focus();
+}
+
+function collectForm(){
+  const id = $('itemId').value || uid();
+  const old = db.items.find(x => x.id === id);
+
+  return {
+    id,
+    title:      $('title').value.trim(),
+    category:   $('category').value || 'другое',
+    status:     $('status').value,
+    rating:     parseFloat($('ratingSlider').value) || 0,
+    creator:    $('creator').value.trim(),
+    coverUrl:   currentCover,
+    startDate:  $('startDate').value,
+    finishDate: $('finishDate').value,
+    progressNow:   Math.max(0, parseInt($('progressNow').value, 10) || 0),
+    progressTotal: Math.max(0, parseInt($('progressTotal').value, 10) || 0),
+    tags:       $('tags').value.split(',').map(s => s.trim()).filter(Boolean),
+    notes:      $('notes').value.trim(),
+    created:    old ? old.created : new Date().toISOString(),
+    updated:    new Date().toISOString()
+  };
+}
+
+/* ═══════════════════════════════════════════
+   12. ЭКСПОРТ / ИМПОРТ
+   ═══════════════════════════════════════════ */
+function exportData(){
+  const payload = Object.assign({}, db, {
+    exportedAt: new Date().toISOString(),
+    app: 'shelfie',
+    version: 2
+  });
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = 'shelfie-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+  showToast('резервная копия подготовлена');
+}
+
+async function importData(file){
+  let data;
+  try {
+    data = JSON.parse(await file.text());
+  } catch(e){
+    showToast('файл не похож на резервную копию shelfie');
+    return;
+  }
+  if (!Array.isArray(data.items) || !Array.isArray(data.categories)){
+    showToast('файл не похож на резервную копию shelfie');
+    return;
+  }
+
+  const choice = await ask(
+    'Файл содержит ' + data.items.length + ' ' +
+      plural(data.items.length, 'запись', 'записи', 'записей') + '.\n\n' +
+      'Что сделать с текущей библиотекой (' + db.items.length + ')?',
+    [
+      { label: 'объединить', value: 'merge',  style: 'primary' },
+      { label: 'заменить',   value: 'replace', style: 'danger' },
+      { label: 'отмена',     value: null }
+    ]
+  );
+  if (!choice) return;
+
+  if (choice === 'replace'){
+    db.items = data.items;
+    db.categories = [...new Set([...DEFAULT_CATS, ...data.categories])];
+    showToast('библиотека заменена');
+  } else {
+    const existingIds = new Set(db.items.map(i => i.id));
+    const added = data.items.filter(i => !existingIds.has(i.id));
+    db.items = [...added, ...db.items];
+    db.categories = [...new Set([...db.categories, ...data.categories])]
+      .sort((a, b) => a.localeCompare(b, 'ru'));
+    showToast('добавлено ' + added.length + ' ' +
+      plural(added.length, 'запись', 'записи', 'записей'));
+  }
+
+  commit();
+  refreshCategories();
+}
+
+/* ═══════════════════════════════════════════
+   13. ОБРАБОТЧИКИ СОБЫТИЙ
+   ═══════════════════════════════════════════ */
+function bindEvents(){
+
+  // навигация
+  document.querySelectorAll('.navbtn').forEach(b => {
+    b.addEventListener('click', () => nav(b.dataset.page));
+  });
+
+  // новая запись
+  $('newItem').onclick = () => {
+    clearForm();
+    refreshCategories();
+    nav('editor');
+    setTimeout(() => $('title').focus(), 150);
+  };
+
+  $('cancelEdit').onclick = () => nav('library');
+
+  // отправка формы
+  $('itemForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const item = collectForm();
+
+    if (!item.title){
+      showToast('нужно хотя бы название');
+      $('title').focus();
+      return;
+    }
+
+    const old = db.items.find(x => x.id === item.id);
+
+    // предупреждение о дубликате
+    if (!old){
+      const dup = db.items.find(x =>
+        x.title.toLowerCase() === item.title.toLowerCase() &&
+        x.category === item.category);
+      if (dup){
+        const go = await ask(
+          'Запись «' + item.title + '» уже есть в категории «' + item.category + '».\n\nВсё равно добавить?',
+          [
+            { label: 'добавить', value: true, style: 'primary' },
+            { label: 'отмена',   value: null }
+          ]
+        );
+        if (!go) return;
+      }
+    }
+
+    db.items = old
+      ? db.items.map(x => x.id === item.id ? item : x)
+      : [item, ...db.items];
+
+    commit();
+    nav('library');
+    showToast(old ? 'изменения сохранены' : 'добавлено в shelfie');
+  });
+
+  // оценка
+  $('ratingSlider').addEventListener('input', e => {
+    renderStars(parseFloat(e.target.value) || 0);
+  });
+
+  // обложка — файл
+  $('coverFile').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')){
+      showToast('нужен файл изображения');
+      return;
+    }
+    try {
+      showToast('сжимаю изображение…');
+      const dataUrl = await compressImage(file);
+      setCover(dataUrl);
+      showToast('обложка добавлена');
+    } catch(err){
+      showToast('не удалось обработать изображение');
+    }
+    e.target.value = '';
+  });
+
+  // обложка — ссылка
+  $('coverUrl').addEventListener('input', e => {
+    const v = e.target.value.trim();
+    currentCover = v;
+    renderCoverPreview();
+  });
+
+  // обложка — убрать
+  $('coverClear').onclick = () => {
+    setCover('');
+    $('coverFile').value = '';
+  };
+
+  // фильтры
+  ['search', 'filterCat', 'filterStatus', 'sort'].forEach(id => {
+    $(id).addEventListener('input', render);
+  });
+
+  // вид: сетка / список
+  $('viewGrid').onclick = () => {
+    db.settings.view = 'grid'; save(true);
+    $('viewGrid').classList.add('on'); $('viewList').classList.remove('on');
+  };
+  $('viewList').onclick = () => {
+    db.settings.view = 'list'; save(true);
+    $('viewList').classList.add('on'); $('viewGrid').classList.remove('on');
+  };
+
+  // тема
+  $('themeBtn').onclick = () => {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = next;
+    db.settings.theme = next;
+    save(false);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = next === 'light' ? '#f4f2f9' : '#111116';
+  };
+
+  // категории
+  $('addCategory').onclick = () => {
+    const c = $('newCategory').value.trim();
+    if (!c) return;
+    if (db.categories.some(x => x.toLowerCase() === c.toLowerCase())){
+      showToast('такая категория уже есть');
+      return;
+    }
+    db.categories.push(c);
+    db.categories.sort((a, b) => a.localeCompare(b, 'ru'));
+    $('newCategory').value = '';
+    commit();
+    refreshCategories();
+    showToast('категория добавлена');
+  };
+
+  $('newCategory').addEventListener('keydown', e => {
+    if (e.key === 'Enter'){ e.preventDefault(); $('addCategory').click(); }
+  });
+
+  // экспорт / импорт
+  $('exportBtn').onclick  = exportData;
+  $('quickBackup').onclick = exportData;
+
+  $('importFile').addEventListener('change', async e => {
+    const f = e.target.files[0];
+    if (f) await importData(f);
+    e.target.value = '';
+  });
+
+  // демо
+  $('demoBtn').onclick = () => {
+    if (db.items.some(i => i.title === 'пример: фанфик, который разбил сердце')){
+      showToast('демо-запись уже есть');
+      return;
+    }
+    db.items.unshift({
+      id: uid(),
+      title: 'пример: фанфик, который разбил сердце',
+      category: 'фанфик',
+      status: 'завершено',
+      rating: 4.75,
+      creator: 'любимый автор',
+      coverUrl: '',
+      startDate: '2026-10-01',
+      finishDate: '2026-10-08',
+      progressNow: 12,
+      progressTotal: 12,
+      tags: ['фаворит', 'пример'],
+      notes: 'это демонстрационная запись. её можно изменить или удалить.',
+      created: new Date().toISOString(),
+      updated: new Date().toISOString()
+    });
+    commit();
+    showToast('добавлена демо-запись');
+  };
+
+  // стереть всё
+  $('wipeBtn').onclick = async () => {
+    const ok = await ask(
+      'Удалить все ' + db.items.length + ' ' +
+        plural(db.items.length, 'запись', 'записи', 'записей') +
+        ' навсегда?\n\nОтменить это будет нельзя.',
+      [
+        { label: 'удалить', value: true, style: 'danger' },
+        { label: 'отмена',  value: null }
+      ]
+    );
+    if (!ok) return;
+    db.items = [];
+    commit();
+    showToast('библиотека очищена');
+  };
+
+  // горячие клавиши
+  document.addEventListener('keydown', e => {
+    const inField = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'){
+      e.preventDefault();
+      nav('library');
+      $('search').focus();
+      $('search').select();
+      return;
+    }
+
+    if (e.key === 'Escape' && $('editor').classList.contains('active')){
+      nav('library');
+      return;
+    }
+
+    if (!inField && (e.key === 'n' || e.key === 'т')){
+      e.preventDefault();
+      $('newItem').click();
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════
+   14. ЗАПУСК
+   ═══════════════════════════════════════════ */
+function removeItem(id){
+  const i = db.items.find(x => x.id === id);
+  if (!i) return;
+  ask('Удалить «' + i.title + '»?', [
+    { label: 'удалить', value: true, style: 'danger' },
+    { label: 'отмена',  value: null }
+  ]).then(ok => {
+    if (!ok) return;
+    db.items = db.items.filter(x => x.id !== id);
+    commit();
+    showToast('запись удалена');
+  });
+}
+
+function init(){
+  load();
+  bindEvents();
+
+  // применяем сохранённые настройки
+  document.documentElement.dataset.theme = db.settings.theme || 'dark';
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = db.settings.theme === 'light' ? '#f4f2f9' : '#111116';
+
+  if (db.settings.view === 'list'){
+    $('viewList').classList.add('on');
+    $('viewGrid').classList.remove('on');
+  }
+
+  refreshCategories();
+  renderStars(0);
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
